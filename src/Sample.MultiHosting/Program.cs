@@ -10,63 +10,49 @@ Console.Title = "Samples.MultiHosting";
 
 #region multi-hosting-startup
 
-using var endpointOneBuilder = ConfigureEndpointOne(Host.CreateDefaultBuilder(args)).Build();
-using var endpointTwoBuilder = ConfigureEndpointTwo(Host.CreateDefaultBuilder(args)).Build();
+using var endpointOneBuilder = ConfigureEndpointOne(Host.CreateApplicationBuilder(args)).Build();
+using var endpointTwoBuilder = ConfigureEndpointTwo(Host.CreateApplicationBuilder(args)).Build();
 
 await Task.WhenAll(endpointOneBuilder.StartAsync(), endpointTwoBuilder.StartAsync()).ConfigureAwait(true);
 await Task.WhenAll(endpointOneBuilder.WaitForShutdownAsync(), endpointTwoBuilder.WaitForShutdownAsync()).ConfigureAwait(true);
 
 #endregion
 
-static IHostBuilder ConfigureEndpointOne(IHostBuilder builder)
+static HostApplicationBuilder ConfigureEndpointOne(HostApplicationBuilder builder)
 {
-    builder.UseConsoleLifetime();
-    builder.ConfigureLogging((ctx, logging) =>
-    {
-        logging.AddConfiguration(ctx.Configuration.GetSection("Logging"));
-        logging.AddConsole();
-    });
+    builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging")).AddConsole();
 
-    builder.UseNServiceBus(ctx =>
-    {
-        #region multi-hosting-assembly-scan
+    #region multi-hosting-assembly-scan
 
-        var endpointConfiguration = new EndpointConfiguration("Instance1");
-        var scanner = endpointConfiguration.AssemblyScanner();
-        scanner.ExcludeAssemblies("Instance2");
+    var endpointConfiguration = new EndpointConfiguration("Instance1");
+    var scanner = endpointConfiguration.AssemblyScanner();
+    scanner.ExcludeAssemblies("Instance2");
 
-        #endregion
+    #endregion
 
-        endpointConfiguration.UseSerialization<SystemJsonSerializer>();
-        endpointConfiguration.UseTransport(new LearningTransport());
-        endpointConfiguration.DefineCriticalErrorAction(OnCriticalError);
+    endpointConfiguration.UseSerialization<SystemJsonSerializer>();
+    endpointConfiguration.UseTransport(new LearningTransport());
+    endpointConfiguration.DefineCriticalErrorAction(OnCriticalError);
 
-        return endpointConfiguration;
-    });
+    builder.UseNServiceBus(endpointConfiguration);
 
     return builder;
 }
 
-static IHostBuilder ConfigureEndpointTwo(IHostBuilder builder)
+static HostApplicationBuilder ConfigureEndpointTwo(HostApplicationBuilder builder)
 {
-    builder.UseConsoleLifetime();
-    builder.ConfigureLogging((ctx, logging) =>
-    {
-        logging.AddConfiguration(ctx.Configuration.GetSection("Logging"));
-        logging.AddConsole();
-    });
+    var logging = builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+    logging.AddConsole();
 
-    builder.UseNServiceBus(ctx =>
-    {
-        var endpointConfiguration = new EndpointConfiguration("Instance2");
-        var scanner = endpointConfiguration.AssemblyScanner();
-        scanner.ExcludeAssemblies("Instance1");
-        endpointConfiguration.UseSerialization<SystemJsonSerializer>();
-        endpointConfiguration.UseTransport(new LearningTransport());
-        endpointConfiguration.DefineCriticalErrorAction(OnCriticalError);
+    var endpointConfiguration = new EndpointConfiguration("Instance2");
+    var scanner = endpointConfiguration.AssemblyScanner();
+    scanner.ExcludeAssemblies("Instance1");
 
-        return endpointConfiguration;
-    });
+    endpointConfiguration.UseSerialization<SystemJsonSerializer>();
+    endpointConfiguration.UseTransport(new LearningTransport());
+    endpointConfiguration.DefineCriticalErrorAction(OnCriticalError);
+
+    builder.UseNServiceBus(endpointConfiguration);
 
     return builder;
 }
