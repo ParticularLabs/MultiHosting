@@ -1,19 +1,14 @@
----
-title: Generic Host multiple endpoint hosting
-summary: Hosting multiple endpoints in a generic host process.
-reviewed: 2023-11-07
-component: Core
-related:
-- nservicebus/hosting
-redirects:
-- samples/hosting/multi-hosting
----
-
-## Code walk-through
+## Generic Host multiple endpoint hosting
 
 This sample shows how to host multiple endpoints in one generic host process by using multiple `IHostBuilder` instances. When started, the application creates two host builder instances, each configured for a different endpoint that could be using different configurations:
 
-snippet: multi-hosting-startup
+```
+using var endpointOneBuilder = ConfigureEndpointOne(Host.CreateDefaultBuilder(args)).Build();
+using var endpointTwoBuilder = ConfigureEndpointTwo(Host.CreateDefaultBuilder(args)).Build();
+
+await Task.WhenAll(endpointOneBuilder.StartAsync(), endpointTwoBuilder.StartAsync());
+await Task.WhenAll(endpointOneBuilder.WaitForShutdownAsync(), endpointTwoBuilder.WaitForShutdownAsync());
+```
 
 An important thing to keep in mind is that [dependency injection](/nservicebus/dependency-injection/) is used internally to register components, handlers, and sagas. Each host has a separate ServiceProvider which means the containers are not shared between the endpoints.
 
@@ -23,4 +18,8 @@ WARN: If a single endpoint fails to start, the host will shut down, terminating 
 
 In this example, complete isolation is required between the two endpoints so that the types from Instance2 are excluded from Instance1 and vice versa.
 
-snippet: multi-hosting-assembly-scan
+```
+   var endpointConfiguration = new EndpointConfiguration("Instance1");
+   var scanner = endpointConfiguration.AssemblyScanner();
+   scanner.ExcludeAssemblies("Instance2");
+```
