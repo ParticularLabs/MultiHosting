@@ -24,7 +24,6 @@ static IHostBuilder ConfigureEndpointOne(IHostBuilder builder)
     builder.ConfigureLogging((ctx, logging) =>
     {
         logging.AddConfiguration(ctx.Configuration.GetSection("Logging"));
-        logging.AddEventLog();
         logging.AddConsole();
     });
 
@@ -54,7 +53,6 @@ static IHostBuilder ConfigureEndpointTwo(IHostBuilder builder)
     builder.ConfigureLogging((ctx, logging) =>
     {
         logging.AddConfiguration(ctx.Configuration.GetSection("Logging"));
-        logging.AddEventLog();
         logging.AddConsole();
     });
 
