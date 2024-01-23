@@ -1,22 +1,19 @@
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using NServiceBus;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using NServiceBus;
 
 
 Console.Title = "Samples.MultiHosting";
 
-#region multi-hosting-startup
-
 using var endpointOneBuilder = ConfigureEndpointOne(Host.CreateDefaultBuilder(args)).Build();
 using var endpointTwoBuilder = ConfigureEndpointTwo(Host.CreateDefaultBuilder(args)).Build();
 
-await Task.WhenAll(endpointOneBuilder.StartAsync(), endpointTwoBuilder.StartAsync()).ConfigureAwait(true);
-await Task.WhenAll(endpointOneBuilder.WaitForShutdownAsync(), endpointTwoBuilder.WaitForShutdownAsync()).ConfigureAwait(true);
+await Task.WhenAll(endpointOneBuilder.StartAsync(), endpointTwoBuilder.StartAsync());
+await Task.WhenAll(endpointOneBuilder.WaitForShutdownAsync(), endpointTwoBuilder.WaitForShutdownAsync());
 
-#endregion
 
 static IHostBuilder ConfigureEndpointOne(IHostBuilder builder)
 {
@@ -30,13 +27,9 @@ static IHostBuilder ConfigureEndpointOne(IHostBuilder builder)
 
     builder.UseNServiceBus(ctx =>
     {
-        #region multi-hosting-assembly-scan
-
         var endpointConfiguration = new EndpointConfiguration("Instance1");
         var scanner = endpointConfiguration.AssemblyScanner();
         scanner.ExcludeAssemblies("Instance2");
-
-        #endregion
 
         endpointConfiguration.UseSerialization<SystemJsonSerializer>();
         endpointConfiguration.UseTransport(new LearningTransport());
@@ -81,7 +74,7 @@ static async Task OnCriticalError(ICriticalErrorContext context, CancellationTok
 
     try
     {
-        await context.Stop(cancellationToken).ConfigureAwait(false);
+        await context.Stop(cancellationToken);
     }
     finally
     {

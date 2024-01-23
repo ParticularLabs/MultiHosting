@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
 
-var sendOnlyInstance = await StartSendOnlyEndpoint(CancellationToken.None).ConfigureAwait(true);
+var sendOnlyInstance = await StartSendOnlyEndpoint(CancellationToken.None);
 
 try
 {
@@ -18,14 +18,12 @@ try
         var message = new MyMessage();
         if (key.Key == ConsoleKey.D1)
         {
-            await sendOnlyInstance.Send("Instance1", message)
-                .ConfigureAwait(false);
+            await sendOnlyInstance.Send("Instance1", message);
             continue;
         }
         if (key.Key == ConsoleKey.D2)
         {
-            await sendOnlyInstance.Send("Instance2", message)
-                .ConfigureAwait(false);
+            await sendOnlyInstance.Send("Instance2", message);
             continue;
         }
         return;
@@ -35,8 +33,7 @@ finally
 {
     if (sendOnlyInstance != null)
     {
-        await sendOnlyInstance.Stop()
-            .ConfigureAwait(false);
+        await sendOnlyInstance.Stop();
     }
 }
 
